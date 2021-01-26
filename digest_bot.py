@@ -1,9 +1,10 @@
+from dotenv import load_dotenv
+import logging
+import os
 import praw
 import prawcore
-from dotenv import load_dotenv
-import os
 import sqlite3
-import logging
+import sys
 
 class DigestBot:
     def __init__(self):
