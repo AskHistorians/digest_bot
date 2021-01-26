@@ -74,14 +74,14 @@ class DigestBot:
             self.send_pm(user, subject, text)
 
     def check_user(self, user):
-        self.cursor.execute("SELECT user FROM subs where user = '" + user + "'")
+        self.cursor.execute("SELECT user FROM subs where user = ?", [user])
         return self.cursor.fetchone() != None
 
     def check_mod(self, user):
         if user in ["AverageAngryPeasant", "Georgy_K_Zhukov", "AHMessengerBot"]:
             return True
 
-        self.cursor.execute("SELECT user FROM subs where user = '" + user + "' AND mod = 1")
+        self.cursor.execute("SELECT user FROM subs where user = ? AND mod = 1", [user])
         result = self.cursor.fetchone()
         return result != None
 
@@ -90,7 +90,7 @@ class DigestBot:
             logging.info(f"Attempted add failed, {user} is already subbed.")
             return
 
-        self.cursor.execute("INSERT INTO SUBS VALUES ('" + user + "', 0)")
+        self.cursor.execute("INSERT INTO SUBS VALUES (?, 0)", [user])
         self.db.commit()
         logging.info(f"Added user {user} successfully.")
 
@@ -99,7 +99,7 @@ class DigestBot:
             logging.info(f"Attempted remove failed, {user} is already not subbed.")
             return
 
-        self.cursor.execute("DELETE FROM SUBS WHERE user = '" + user + "'")
+        self.cursor.execute("DELETE FROM SUBS WHERE user = ?", [user])
         self.db.commit()
         logging.info(f"Removed user {user} successfully.")
 
@@ -111,7 +111,7 @@ class DigestBot:
         if not text:
             text = user
 
-        self.cursor.execute("UPDATE subs SET mod = 1 WHERE user = '" + text + "'")
+        self.cursor.execute("UPDATE subs SET mod = 1 WHERE user = ?", [text])
         self.db.commit()
         logging.info(f"Mod {user} modded user {text} successfully.")
 
@@ -123,7 +123,7 @@ class DigestBot:
         if not text:
             text = user
 
-        self.cursor.execute("UPDATE subs SET mod = 0 WHERE user = '" + text + "'")
+        self.cursor.execute("UPDATE subs SET mod = 0 WHERE user = ?", [text])
         self.db.commit()
         logging.info(f"Mod {user} unmodded user {text} successfully.")
 
