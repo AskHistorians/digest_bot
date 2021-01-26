@@ -10,10 +10,13 @@ class DigestBot:
         self.reddit = self.reddit_init()
         self.db = self.create_database()
         self.cursor = self.db.cursor()
-        debug = os.getenv("AHDEBUG") in ["TRUE", "true"]:
-        logging.basicConfig(stream=sys.stdout, level=logging.DEBUG if debug else logging.INFO)
 
-def reddit_init(self):
+        if os.getenv("AHDEBUG") in ["TRUE", "true"]:
+            logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+        else:
+            logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+
+    def reddit_init(self):
         load_dotenv()
         username = os.getenv("REDDIT_USERNAME")
         password = os.getenv("REDDIT_PASSWORD")
