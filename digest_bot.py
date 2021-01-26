@@ -10,23 +10,22 @@ class DigestBot:
         self.reddit = self.reddit_init()
         self.db = self.create_database()
         self.cursor = self.db.cursor()
-        if os.getenv("AHDEBUG") in ["TRUE", "true"]:
-            logging.basicConfig(filename='digest.log', level=logging.DEBUG)
-        else:
-            logging.basicConfig(filename='digest.log', level=logging.INFO)
+        debug = os.getenv("AHDEBUG") in ["TRUE", "true"]:
+        logging.basicConfig(stream=sys.stdout, level=logging.DEBUG if debug else logging.INFO)
 
-    def reddit_init(self):
+def reddit_init(self):
         load_dotenv()
-        username = os.getenv("USERNAME")
-        password = os.getenv("PASSWORD")
-        client_id = os.getenv("CLIENTID")
-        client_secret = os.getenv("CLIENTSECRET")
+        username = os.getenv("REDDIT_USERNAME")
+        password = os.getenv("REDDIT_PASSWORD")
+        client_id = os.getenv("REDDIT_CLIENT_ID")
+        client_secret = os.getenv("REDDIT_SECRET")
         user_agent = "DigestBot:v1.0 (by u/AverageAngryPeasant)"
         return praw.Reddit(client_id=client_id, client_secret=client_secret, user_agent=user_agent, username=username, password=password)
 
     def create_database(self):
-        exists = os.path.isfile("subs.db")
-        db = sqlite3.connect("subs.db")
+        db_path = os.getenv("DIGEST_BOT_DB_PATH")
+        exists = os.path.isfile(db_path)
+        db = sqlite3.connect(db_path)
         c = db.cursor()
         if not exists:
             c.execute("CREATE TABLE SUBS ([user] text, [mod] integer)")
