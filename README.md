@@ -14,7 +14,7 @@ Then, run digest_bot.py using python.
 python digest_bot.py
 ```
 
-Note that you must place a .env file in this directory with the proper CLIENTID and CLIENTSECRET variables before using this script, as well as the bot account's USERNAME and PASSWORD.
+Note that you must place a .env file in this directory with the proper REDDIT_CLIENT_ID and REDDIT_SECRET variables before using this script, as well as the bot account's REDDIT_USERNAME and REDDIT_PASSWORD. Additionally, you must provide the path to the database through DIGEST_BOT_DB_PATH, and you can set AHDEBUG to "true" to provide more detailed logs.
 
 ## Commands
 
