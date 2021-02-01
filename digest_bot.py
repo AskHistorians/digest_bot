@@ -5,11 +5,14 @@ import praw
 import prawcore
 import sqlite3
 import sys
+import datetime
 
 class DigestBot:
     def __init__(self):
         self.reddit = self.reddit_init()
         self.db = self.create_database()
+        self.backup = self.setup_backup()
+        self.last_backup = None
         self.cursor = self.db.cursor()
 
         if os.getenv("AHDEBUG") in ["TRUE", "true"]:
@@ -35,6 +38,24 @@ class DigestBot:
             c.execute("CREATE TABLE SUBS ([user] text, [mod] integer)")
         db.commit()
         return db
+
+    def setup_backup(self):
+        path = os.path.join(os.path.dirname(os.getenv("DIGEST_BOT_DB_PATH")), "ah_backups")
+        if not os.path.isdir(path):
+            os.mkdir(path)
+            logging.info(f"Created backup folder in {path}")
+        return path
+            
+    def create_backup(self):
+        logging.info("Starting to create backup.")
+        name = datetime.datetime.now().strftime("%Y-%m-%d-%H:%M:%S") + "-backup.db"
+        self.last_backup = datetime.datetime.now()
+
+        back = sqlite3.connect(os.path.join(self.backup, name))
+        with back:
+            self.db.backup(back)
+        back.close()
+        logging.info("Backup finished!")
 
     def extract_command(self, text):
         text = text.strip()
@@ -165,12 +186,17 @@ class DigestBot:
 
     def main(self):
         self.print_db()
-        try:
-            for message in self.reddit.inbox.stream():
-                self.parse_message(message)
-                message.mark_read()
-        except sqlite3.DatabaseError as err:
-            logging.error("Sqlite error: " + str(err))
+        while True:
+            try:
+                for message in self.reddit.inbox.stream():
+                    if not self.last_backup or self.last_backup + datetime.timedelta(hours=12) < datetime.datetime.now():
+                        self.create_backup()
+                    self.parse_message(message)
+                    message.mark_read()
+            except sqlite3.DatabaseError as err:
+                logging.error("Sqlite error: " + str(err))
+            except prawcore.exceptions.ResponseException as err:
+                logging.error("Bad response: " + str(err))
 
 if __name__ == "__main__":
     bot = DigestBot()
