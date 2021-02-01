@@ -6,6 +6,7 @@ import prawcore
 import sqlite3
 import sys
 import datetime
+import time
 
 class DigestBot:
     def __init__(self):
@@ -197,6 +198,7 @@ class DigestBot:
                 logging.error("Sqlite error: " + str(err))
             except prawcore.exceptions.ResponseException as err:
                 logging.error("Bad response: " + str(err))
+                time.sleep(60)
 
 if __name__ == "__main__":
     bot = DigestBot()
