@@ -199,6 +199,7 @@ class DigestBot:
             except prawcore.exceptions.ResponseException as err:
                 logging.error("Bad response: " + str(err))
                 time.sleep(60)
+                logging.error("Woke up from sleep.")
 
 if __name__ == "__main__":
     bot = DigestBot()
