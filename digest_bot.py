@@ -59,16 +59,21 @@ class DigestBot:
         logging.info("Backup finished!")
 
     def extract_command(self, text):
+        logging.info("Recieved message with text:")
+        logging.info(text)
         text = text.strip()
-        if " " not in text:
-            return text, ""
+        split = text.split()
+        if split:
+            command = split[0]
+            text = text[len(command):].strip()
+            return command, text
         else:
-            return text[:text.find(" ")], text[text.find(" ") + 1:]
+            return "", text
 
     def parse_message(self, message):
         command, text = self.extract_command(message.body)
         subject = message.subject
-        logging.debug(f"Parsed message with command {command} and text {text}.")
+        logging.info(f"Parsed message with command {command} and text {text}.")
         user = message.author.name
 
         if user in ["reddit"]: # automated emails
@@ -85,17 +90,18 @@ class DigestBot:
         elif command in ["!send"]:
             if self.check_mod(user):
                 if not text:
-                    self.send_pm(user, subject, "Error: must include message to send!")
+                    self.send_pm(user, "AH Digest", "Error when sending digest: must include message.")
                 else:
-                    self.send_digest(subject, text[text.find(" ")+1:])
+                    self.send_digest(user, subject, text)
             else:
-                self.send_pm(user, subject, text)
+                self.send_pm(user, "AH Digest", "You are not authorized to perform this operation.")
         elif command in ["!export_mods"]:
             self.export_mods(user)
         else:
-            text = message.body.strip()
-            user = message.author.name
-            self.send_pm(user, subject, text)
+            pass
+            # text = message.body.strip()
+            # user = message.author.name
+            # self.message_owner(user, subject, text)
 
     def fetch_mods(self):
         self.cursor.execute("SELECT user FROM subs where mod = 1")
@@ -116,24 +122,29 @@ class DigestBot:
 
     def add_user(self, user):
         if self.check_user(user):
+            self.send_pm(user, "AH Digest", "You are already subbed.")
             logging.info(f"Attempted add failed, {user} is already subbed.")
             return
 
         self.cursor.execute("INSERT INTO SUBS VALUES (?, 0)", [user])
         self.db.commit()
+        self.send_pm(user, "AH Digest", "Added to AH Digest successfully!")
         logging.info(f"Added user {user} successfully.")
 
     def remove_user(self, user):
         if not self.check_user(user):
+            self.send_pm(user, "AH Digest", "You are already not subbed.")
             logging.info(f"Attempted remove failed, {user} is already not subbed.")
             return
 
         self.cursor.execute("DELETE FROM SUBS WHERE user = ?", [user])
         self.db.commit()
+        self.send_pm(user, "AH Digest", "Removed from AH Digest successfully!")
         logging.info(f"Removed user {user} successfully.")
 
     def mod_user(self, user, text):
         if not self.check_mod(user):
+            self.send_pm(user, "AH Digest", "You are not authorized to perform this operation.")
             logging.info(f"Attempted mod failed, {user} is not modded.")
             return
         
@@ -142,10 +153,14 @@ class DigestBot:
 
         self.cursor.execute("UPDATE subs SET mod = 1 WHERE user = ?", [text])
         self.db.commit()
+        self.send_pm(user, "AH Digest", "Modded to AH Digest successfully!")
+        if text != user:
+            self.send_pm(text, "AH Digest", f"You have been modded by user {user}.")
         logging.info(f"Mod {user} modded user {text} successfully.")
 
     def unmod_user(self, user, text):
         if not self.check_mod(user):
+            self.send_pm(user, "AH Digest", "You are not authorized to perform this operation.")
             logging.info(f"Attempted unmod failed, {user} is not modded.")
             return
 
@@ -154,21 +169,29 @@ class DigestBot:
 
         self.cursor.execute("UPDATE subs SET mod = 0 WHERE user = ?", [text])
         self.db.commit()
+        self.send_pm(user, "AH Digest", "Unmodded from AH Digest successfully!")
+        if text != user:
+            self.send_pm(text, "AH Digest", f"You have been unmodded by user {user}.")
         logging.info(f"Mod {user} unmodded user {text} successfully.")
 
-    def send_digest(self, subject, text):
-        users = self.cursor.execute("SELECT user FROM subs")
-        for user in users:
-            user = user[0]
-            self.reddit.redditor(user).message(subject, text)
-        logging.info(f"User {user} successfully sent digest.")
-        logging.debug(f"Digest had subject {subject} and text {text}.")
+    def send_digest(self, user, subject, text):
+        subs = self.cursor.execute("SELECT user FROM subs")
+        for sub in subs:
+            sub = sub[0]
+            self.send_pm(sub, subject, text)
+
+        self.send_pm(user, "AH Digest", "Sent AH Digest successfully!")
+        logging.info(f"Successfully sent digest.")
+        logging.info(f"Digest had subject {subject} and text {text}.")
 
     def send_pm(self, user, subject, text):
+        self.reddit.redditor(user).message(subject, text)
+
+    def message_owner(self, user, subject, text):
         if text and text not in ["sub", "subscribe", "unsub", "unsubscribe", "mod", "unmod", "send"] and text[0] != "!":
             text = "User " + user + " has sent you a message through DigestBot:\n\n" + "SUBJECT: " + subject + "\n\n" + text
-            self.reddit.redditor("AverageAngryPeasant").message("DigestBot PM", text)
-        logging.debug(f"Private message sent by user {user}.")
+            self.send_pm("AverageAngryPeasant", "DigestBot PM", text)
+        logging.info(f"Private message sent by user {user}.")
 
     def export_mods(self, user):
         if not self.check_mod(user):
@@ -178,12 +201,12 @@ class DigestBot:
         users = '\n'.join(self.fetch_mods())
         if not users:
             users = "There are no currently modded users."
-        self.reddit.redditor(user).message("List of AHMessengerBot mods", users)
+        self.send_pm(user, "List of AHMessengerBot mods", users)
         logging.info(f"Sent {user} list of mods successfully.")
 
     def print_db(self):
         self.cursor.execute("SELECT * FROM SUBS")
-        logging.debug(self.cursor.fetchall())
+        logging.info(self.cursor.fetchall())
 
     def main(self):
         self.print_db()
