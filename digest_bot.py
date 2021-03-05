@@ -105,7 +105,6 @@ class DigestBot:
 
     def fetch_mods(self):
         self.cursor.execute("SELECT user FROM subs where mod = 1")
-        self.cursor.fetchall()
         return [user[0] for user in self.cursor.fetchall()]
 
     def check_user(self, user):
@@ -222,7 +221,8 @@ class DigestBot:
             logging.info(f"Attempted mod export failed, {user} is not modded.")
             return
 
-        users = '\n'.join(self.fetch_mods())
+        mods = self.fetch_mods()
+        users = '\n\n'.join(mods)
         if not users:
             users = "There are no currently modded users."
         self.send_pm(user, "List of AHMessengerBot mods", users)
