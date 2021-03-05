@@ -176,11 +176,35 @@ class DigestBot:
 
     def send_digest(self, user, subject, text):
         subs = self.cursor.execute("SELECT user FROM subs")
+        errors = [[], [], []]
+        err_msgs = ["Non-whitelisted users: ", "Nonexistent users: ", "Other errors: "]
+
         for sub in subs:
             sub = sub[0]
-            self.send_pm(sub, subject, text)
+            self.last_user = sub
 
-        self.send_pm(user, "AH Digest", "Sent AH Digest successfully!")
+            try:
+                self.send_pm(sub, subject, text)
+            except praw.exceptions.RedditAPIException as err:
+                if err.error_type == 'NOT_WHITELISTED_BY_USER_MESSAGE':
+                    logging.error(f"Non-whitelisted user {sub}: " + str(err))
+                    errors[0].append(sub)
+                elif err.error_type == 'USER_DOESNT_EXIST':
+                    logging.error("Non-existent user found: " + str(err))
+                    logging.info("Deleting non-existent user.")
+                    self.cursor.execute("DELETE FROM SUBS WHERE user = ?", [sub])
+                    self.db.commit()
+                    logging.info("User successfully deleted.")
+                    errors[1].append(sub)
+                else:
+                    logging.error("Reddit API Exception: " + str(err))
+                    errors[-1].append(sub)
+
+        confirm = "Sent AH Digest successfully!"
+        for i in range(len(errors)):
+            if errors[i]:
+                confirm += "\n\n" + err_msgs[i] + str(len(errors[i]))
+        self.send_pm(user, "AH Digest", confirm)
         logging.info(f"Successfully sent digest.")
         logging.info(f"Digest had subject {subject} and text {text}.")
 
