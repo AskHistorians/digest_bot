@@ -176,6 +176,7 @@ class DigestBot:
     def send_digest(self, user, subject, text):
         subs = self.cursor.execute("SELECT user FROM subs")
         errors = [[], [], []]
+        count = 0
         err_msgs = ["Non-whitelisted users: ", "Nonexistent users: ", "Other errors: "]
 
         for sub in subs:
@@ -198,8 +199,11 @@ class DigestBot:
                 else:
                     logging.error("Reddit API Exception: " + str(err))
                     errors[-1].append(sub)
+            else:
+                count += 1
 
         confirm = "Sent AH Digest successfully!"
+        confirm += f"\n\nSuccessfully sent message to {count} users."
         for i in range(len(errors)):
             if errors[i]:
                 confirm += "\n\n" + err_msgs[i] + str(len(errors[i]))
