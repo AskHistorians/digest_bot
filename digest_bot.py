@@ -14,7 +14,6 @@ class DigestBot:
         self.db = self.create_database()
         self.backup = self.setup_backup()
         self.last_backup = None
-        self.cursor = self.db.cursor()
 
         if os.getenv("AHDEBUG") in ["TRUE", "true"]:
             logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -104,19 +103,22 @@ class DigestBot:
             # self.message_owner(user, subject, text)
 
     def fetch_mods(self):
-        self.cursor.execute("SELECT user FROM subs where mod = 1")
-        return [user[0] for user in self.cursor.fetchall()]
+        c = self.db.cursor()
+        c.execute("SELECT user FROM subs where mod = 1")
+        return [user[0] for user in c.fetchall()]
 
     def check_user(self, user):
-        self.cursor.execute("SELECT user FROM subs where user = ?", [user])
-        return self.cursor.fetchone() != None
+        c = self.db.cursor()
+        c.execute("SELECT user FROM subs where user = ?", [user])
+        return c.fetchone() != None
 
     def check_mod(self, user):
         if user in ["AverageAngryPeasant", "Georgy_K_Zhukov", "AHMessengerBot"]:
             return True
 
-        self.cursor.execute("SELECT user FROM subs where user = ? AND mod = 1", [user])
-        result = self.cursor.fetchone()
+        c = self.db.cursor()
+        c.execute("SELECT user FROM subs where user = ? AND mod = 1", [user])
+        result = c.fetchone()
         return result != None
 
     def add_user(self, user):
@@ -125,7 +127,8 @@ class DigestBot:
             logging.info(f"Attempted add failed, {user} is already subbed.")
             return
 
-        self.cursor.execute("INSERT INTO SUBS VALUES (?, 0)", [user])
+        c = self.db.cursor()
+        c.execute("INSERT INTO SUBS VALUES (?, 0)", [user])
         self.db.commit()
         self.send_pm(user, "AH Digest", "Added to AH Digest successfully!")
         logging.info(f"Added user {user} successfully.")
@@ -136,7 +139,8 @@ class DigestBot:
             logging.info(f"Attempted remove failed, {user} is already not subbed.")
             return
 
-        self.cursor.execute("DELETE FROM SUBS WHERE user = ?", [user])
+        c = self.db.cursor()
+        c.execute("DELETE FROM SUBS WHERE user = ?", [user])
         self.db.commit()
         self.send_pm(user, "AH Digest", "Removed from AH Digest successfully!")
         logging.info(f"Removed user {user} successfully.")
@@ -150,7 +154,8 @@ class DigestBot:
         if not text:
             text = user
 
-        self.cursor.execute("UPDATE subs SET mod = 1 WHERE user = ?", [text])
+        c = self.db.cursor()
+        c.execute("UPDATE subs SET mod = 1 WHERE user = ?", [text])
         self.db.commit()
         self.send_pm(user, "AH Digest", "Modded to AH Digest successfully!")
         if text != user:
@@ -166,7 +171,8 @@ class DigestBot:
         if not text:
             text = user
 
-        self.cursor.execute("UPDATE subs SET mod = 0 WHERE user = ?", [text])
+        c = self.db.cursor()
+        c.execute("UPDATE subs SET mod = 0 WHERE user = ?", [text])
         self.db.commit()
         self.send_pm(user, "AH Digest", "Unmodded from AH Digest successfully!")
         if text != user:
@@ -174,7 +180,8 @@ class DigestBot:
         logging.info(f"Mod {user} unmodded user {text} successfully.")
 
     def send_digest(self, user, subject, text):
-        subs = self.cursor.execute("SELECT user FROM subs")
+        c = self.db.cursor()
+        subs = c.execute("SELECT user FROM subs")
         errors = [[], [], []]
         count = 0
         err_msgs = ["Non-whitelisted users: ", "Nonexistent users: ", "Other errors: "]
@@ -192,7 +199,8 @@ class DigestBot:
                 elif err.error_type == 'USER_DOESNT_EXIST':
                     logging.error("Non-existent user found: " + str(err))
                     logging.info("Deleting non-existent user.")
-                    self.cursor.execute("DELETE FROM SUBS WHERE user = ?", [sub])
+                    c = self.db.cursor()
+                    c.execute("DELETE FROM SUBS WHERE user = ?", [sub])
                     self.db.commit()
                     logging.info("User successfully deleted.")
                     errors[1].append(sub)
@@ -233,8 +241,9 @@ class DigestBot:
         logging.info(f"Sent {user} list of mods successfully.")
 
     def print_db(self):
-        self.cursor.execute("SELECT * FROM SUBS")
-        logging.info(self.cursor.fetchall())
+        c = self.db.cursor()
+        c.execute("SELECT * FROM SUBS")
+        logging.info(c.fetchall())
 
     def main(self):
         self.print_db()
