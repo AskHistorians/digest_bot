@@ -182,9 +182,9 @@ class DigestBot:
     def send_digest(self, user, subject, text):
         c = self.db.cursor()
         subs = c.execute("SELECT user FROM subs")
-        errors = [[], [], []]
+        errors = [[], [], [], []]
         count = 0
-        err_msgs = ["Non-whitelisted users: ", "Nonexistent users: ", "Other errors: "]
+        err_msgs = ["Non-whitelisted users: ", "Nonexistent users: ", "Server errors: ", "Other errors: "]
 
         for sub in subs:
             sub = sub[0]
@@ -207,6 +207,9 @@ class DigestBot:
                 else:
                     logging.error("Reddit API Exception: " + str(err))
                     errors[-1].append(sub)
+            except prawcore.exceptions.ServerError as err:
+                logging.error(f"Server Error on user {sub}: " + str(err))
+                errors[2].append(sub)
             else:
                 count += 1
 
