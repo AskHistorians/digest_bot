@@ -56,6 +56,7 @@ class DigestBot:
             self.db.backup(back)
         back.close()
         logging.info("Backup finished!")
+        self.delete_backups()
 
     def extract_command(self, text):
         logging.info("Recieved message with text:")
@@ -247,6 +248,15 @@ class DigestBot:
         c = self.db.cursor()
         c.execute("SELECT * FROM SUBS")
         logging.info(c.fetchall())
+
+    def delete_backups(self, keep=10):
+        mtime = lambda f: os.stat(os.path.join(self.backup, f)).st_mtime
+        files = list(sorted(os.listdir(self.backup), key=mtime))
+        del_list = files[0:(len(sorted_ls(path))-keep)]
+        
+        for dfile in del_list:
+            os.remove(os.path.join(self.backup, dfile))
+        logging.info(f"Successfully removed {len(del_list)} old backup files!")
 
     def main(self):
         self.print_db()
