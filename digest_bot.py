@@ -14,11 +14,12 @@ class DigestBot:
         self.db = self.create_database()
         self.backup = self.setup_backup()
         self.last_backup = None
+        self.log = "log.log"
 
         if os.getenv("AHDEBUG") in ["TRUE", "true"]:
             logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
         else:
-            logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+            logging.basicConfig(filename=self.log, filemode="a", level=logging.INFO)
 
     def reddit_init(self):
         load_dotenv()
