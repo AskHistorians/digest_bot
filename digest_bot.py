@@ -191,6 +191,7 @@ class DigestBot:
         for sub in subs:
             sub = sub[0]
             self.last_user = sub
+            logging.info(f"Attempting to send digest to user {sub}.")
 
             try:
                 self.send_pm(sub, subject, text)
@@ -214,6 +215,7 @@ class DigestBot:
                 errors[2].append(sub)
             else:
                 count += 1
+                logging.info(f"Succesfully sent digest to user {sub}!")
 
         confirm = "Sent AH Digest successfully!"
         confirm += f"\n\nSuccessfully sent message to {count} users."
