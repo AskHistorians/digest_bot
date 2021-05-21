@@ -255,7 +255,7 @@ class DigestBot:
     def delete_backups(self, keep=10):
         mtime = lambda f: os.stat(os.path.join(self.backup, f)).st_mtime
         files = list(sorted(os.listdir(self.backup), key=mtime))
-        del_list = files[0:(len(sorted_ls(path))-keep)]
+        del_list = files[0:(len(files)-keep)]
         
         for dfile in del_list:
             os.remove(os.path.join(self.backup, dfile))
