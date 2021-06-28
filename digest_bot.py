@@ -196,20 +196,21 @@ class DigestBot:
             try:
                 self.send_pm(sub, subject, text)
             except praw.exceptions.RedditAPIException as err:
-                if err.error_type == 'NOT_WHITELISTED_BY_USER_MESSAGE':
-                    logging.error(f"Non-whitelisted user {sub}: " + str(err))
-                    errors[0].append(sub)
-                elif err.error_type == 'USER_DOESNT_EXIST':
-                    logging.error("Non-existent user found: " + str(err))
-                    logging.info("Deleting non-existent user.")
-                    c = self.db.cursor()
-                    c.execute("DELETE FROM SUBS WHERE user = ?", [sub])
-                    self.db.commit()
-                    logging.info("User successfully deleted.")
-                    errors[1].append(sub)
-                else:
-                    logging.error("Reddit API Exception: " + str(err))
-                    errors[-1].append(sub)
+                for suberr in err.items:
+                    if suberr.error_type == 'NOT_WHITELISTED_BY_USER_MESSAGE':
+                        logging.error(f"Non-whitelisted user {sub}: " + str(err))
+                        errors[0].append(sub)
+                    elif suberr.error_type == 'USER_DOESNT_EXIST':
+                        logging.error("Non-existent user found: " + str(err))
+                        logging.info("Deleting non-existent user.")
+                        c = self.db.cursor()
+                        c.execute("DELETE FROM SUBS WHERE user = ?", [sub])
+                        self.db.commit()
+                        logging.info("User successfully deleted.")
+                        errors[1].append(sub)
+                    else:
+                        logging.error("Reddit API Exception: " + str(err))
+                        errors[-1].append(sub)
             except prawcore.exceptions.ServerError as err:
                 logging.error(f"Server Error on user {sub}: " + str(err))
                 errors[2].append(sub)
