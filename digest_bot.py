@@ -184,9 +184,9 @@ class DigestBot:
     def send_digest(self, user, subject, text):
         c = self.db.cursor()
         subs = c.execute("SELECT user FROM subs")
-        errors = [[], [], [], []]
+        errors = [[], [], [], [], []]
         count = 0
-        err_msgs = ["Non-whitelisted users: ", "Nonexistent users: ", "Server errors: ", "Other errors: "]
+        err_msgs = ["Non-whitelisted users: ", "Nonexistent users: ", "Server errors: ", "Moderator Restrictions: ", "Other errors: "]
 
         for sub in subs:
             sub = sub[0]
@@ -208,6 +208,9 @@ class DigestBot:
                         self.db.commit()
                         logging.info("User successfully deleted.")
                         errors[1].append(sub)
+                    elif suberr.error_type == "PM_MODERATOR_RESTRICTION":
+                        logging.error("Moderator Restriction: " + str(err))
+                        errors[3].append(sub)
                     else:
                         logging.error("Reddit API Exception: " + str(err))
                         errors[-1].append(sub)
