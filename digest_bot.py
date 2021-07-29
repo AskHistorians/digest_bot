@@ -231,7 +231,10 @@ class DigestBot:
         logging.info(f"Digest had subject {subject} and text {text}.")
 
     def send_pm(self, user, subject, text):
-        self.reddit.redditor(user).message(subject, text)
+        try:
+            self.reddit.redditor(user).message(subject, text)
+        except praw.exceptions.RedditAPIException as err:
+            logging.error(f"API Exception when trying to send PM to {user}: " + str(err))
 
     def message_owner(self, user, subject, text):
         if text and text not in ["sub", "subscribe", "unsub", "unsubscribe", "mod", "unmod", "send"] and text[0] != "!":
