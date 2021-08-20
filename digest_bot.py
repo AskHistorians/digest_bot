@@ -14,7 +14,7 @@ class DigestBot:
         self.db = self.create_database()
         self.backup = self.setup_backup()
         self.last_backup = None        
-        self.log = os.getenv("DIGEST_BOT_LOG_PATH")
+        self.log = self.setup_logging()
 
         if os.getenv("AHDEBUG") in ["TRUE", "true"]:
             logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format='%(asctime)s %(levelname)-8s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
