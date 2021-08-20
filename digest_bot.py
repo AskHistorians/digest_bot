@@ -13,13 +13,13 @@ class DigestBot:
         self.reddit = self.reddit_init()
         self.db = self.create_database()
         self.backup = self.setup_backup()
-        self.last_backup = None
-        self.log = "log.log"
+        self.last_backup = None        
+        self.log = os.getenv("DIGEST_BOT_LOG_PATH")
 
         if os.getenv("AHDEBUG") in ["TRUE", "true"]:
-            logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+            logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format='%(asctime)s %(levelname)-8s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
         else:
-            logging.basicConfig(filename=self.log, filemode="a", level=logging.INFO)
+            logging.basicConfig(filename=self.log, filemode="a", level=logging.INFO, format='%(asctime)s %(levelname)-8s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 
     def reddit_init(self):
         load_dotenv()
@@ -39,6 +39,15 @@ class DigestBot:
             c.execute("CREATE TABLE SUBS ([user] text, [mod] integer)")
         db.commit()
         return db
+
+    def setup_logging(self):
+        path = os.getenv("DIGEST_BOT_LOG_PATH")
+        if not os.path.isdir(path):
+            os.mkdir(path)
+
+        name = datetime.datetime.now().strftime("%Y-%m-%d-%H:%M:%S") + "-log.log"
+        path = os.path.join(path, name)
+        return path
 
     def setup_backup(self):
         path = os.path.join(os.path.dirname(os.getenv("DIGEST_BOT_DB_PATH")), "ah_backups")
